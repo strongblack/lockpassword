@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "ru.app.lockpassword.library"
+    namespace = "com.app.lockpassword"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
