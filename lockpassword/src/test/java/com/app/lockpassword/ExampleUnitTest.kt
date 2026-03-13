@@ -1,4 +1,4 @@
-package ru.app.lockpassword
+package com.app.lockpassword
 
 import org.junit.Test
 
