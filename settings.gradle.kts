@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "LockPassword"
 include(":app")
- 
+include(":lockpassword")
