@@ -1,0 +1,25 @@
+<resources>
+    <string name="lock_title_create">Создайте PIN-код</string>
+    <string name="lock_title_repeat">Повторите PIN-код</string>
+    <string name="lock_title_enter">Введите PIN-код</string>
+
+    <string name="lock_action_cancel">Отмена</string>
+    <string name="lock_action_biometric">Биометрия</string>
+    <string name="lock_action_delete">Удалить</string>
+    <string name="lock_digit_zero">0</string>
+
+    <string name="lock_error_pin_mismatch">PIN-коды не совпадают</string>
+    <string name="lock_error_wrong_pin">Неверный PIN-код</string>
+    <string name="lock_error_locked">Слишком много попыток</string>
+    <string name="lock_error_unknown">Неизвестная ошибка</string>
+
+    <string name="lock_biometric_title">Подтвердите вход</string>
+    <string name="lock_biometric_subtitle">Используйте биометрию для продолжения</string>
+
+    <plurals name="lock_remaining_minutes">
+        <item quantity="one">Осталось %d минута</item>
+        <item quantity="few">Осталось %d минуты</item>
+        <item quantity="many">Осталось %d минут</item>
+        <item quantity="other">Осталось %d минуты</item>
+    </plurals>
+</resources>

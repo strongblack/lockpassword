@@ -1,2 +1,23 @@
 <resources>
+    <string name="lock_title_create">Create PIN code</string>
+    <string name="lock_title_repeat">Repeat PIN code</string>
+    <string name="lock_title_enter">Enter PIN code</string>
+
+    <string name="lock_action_cancel">Cancel</string>
+    <string name="lock_action_biometric">Biometric</string>
+    <string name="lock_action_delete">Delete</string>
+    <string name="lock_digit_zero">0</string>
+
+    <string name="lock_error_pin_mismatch">PIN codes do not match</string>
+    <string name="lock_error_wrong_pin">Wrong PIN code</string>
+    <string name="lock_error_locked">Too many attempts</string>
+    <string name="lock_error_unknown">Unknown error</string>
+
+    <string name="lock_biometric_title">Confirm sign in</string>
+    <string name="lock_biometric_subtitle">Use biometrics to continue</string>
+
+    <plurals name="lock_remaining_minutes">
+        <item quantity="one">%d minute remaining</item>
+        <item quantity="other">%d minutes remaining</item>
+    </plurals>
 </resources>

@@ -1,40 +1,93 @@
 package com.app.lockpassword.api
 
-import android.content.Context
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
-import com.app.lockpassword.presentation.LockPasswordViewModel
-import com.app.lockpassword.ui.LockPasswordScreen
+import androidx.appcompat.app.AppCompatActivity
+import com.app.lockpassword.biometric.BiometricAuthManager
+import com.app.lockpassword.storage.LockPasswordPrefsRepository
+import com.app.lockpassword.ui.LockPasswordRoute
+import com.app.lockpassword.ui.LockPasswordViewModel
 
-class LockPasswordActivity : ComponentActivity() {
+class LockPasswordActivity : AppCompatActivity() {
 
-    private val lockPasswordViewModel: LockPasswordViewModel by viewModels()
+    private lateinit var viewModel: LockPasswordViewModel
+    private lateinit var biometricAuthManager: BiometricAuthManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        val repository = LockPasswordPrefsRepository(this)
+        val biometricEnabled = intent.getBooleanExtra(
+            LockPasswordLauncher.EXTRA_BIOMETRIC_ENABLED,
+            false
+        )
+
+        biometricAuthManager = BiometricAuthManager(this)
+
+        viewModel = LockPasswordViewModel(
+            repository = repository,
+            isBiometricAvailable = biometricEnabled && biometricAuthManager.isBiometricAvailable()
+        )
 
         setContent {
-            val uiState by lockPasswordViewModel.uiState.collectAsState()
+            LockPasswordRoute(
+                viewModel = viewModel,
+                onResult = { result ->
+                    when (result) {
+                        LockPasswordResult.Success -> {
+                            finishWithResult(RESULT_SUCCESS)
+                        }
 
-            MaterialTheme {
-                LockPasswordScreen(
-                    uiState = uiState,
-                )
-            }
+                        LockPasswordResult.BiometricSuccess -> {
+                            finishWithResult(RESULT_BIOMETRIC_SUCCESS)
+                        }
+
+                        LockPasswordResult.Cancelled -> {
+                            finishWithResult(RESULT_CANCELLED)
+                        }
+
+                        is LockPasswordResult.InvalidPin -> {
+                        }
+
+                        is LockPasswordResult.Locked -> {
+                        }
+
+                        is LockPasswordResult.Error -> {
+                            finishWithResult(RESULT_ERROR)
+                        }
+                    }
+                },
+                onBiometricRequest = {
+                    biometricAuthManager.authenticate(
+                        onSuccess = {
+                            viewModel.onBiometricSuccess()
+                        },
+                        onError = { _, _ ->
+                        },
+                        onFailed = {
+                        }
+                    )
+                }
+            )
         }
     }
 
-    companion object {
-        fun createIntent(context: Context): Intent {
-            return Intent(context, LockPasswordActivity::class.java)
+    private fun finishWithResult(resultCodeValue: Int) {
+        val data = Intent().apply {
+            putExtra(EXTRA_RESULT_CODE, resultCodeValue)
         }
+        setResult(Activity.RESULT_OK, data)
+        finish()
+    }
+
+    companion object {
+        const val EXTRA_RESULT_CODE = "extra_result_code"
+
+        const val RESULT_SUCCESS = 1
+        const val RESULT_BIOMETRIC_SUCCESS = 2
+        const val RESULT_CANCELLED = 3
+        const val RESULT_ERROR = 4
     }
 }

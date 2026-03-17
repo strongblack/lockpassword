@@ -1,48 +1,87 @@
 package ru.app.lockpassword
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import com.app.lockpassword.api.LockPasswordResult
+import com.app.lockpassword.storage.LockPasswordPrefsRepository
+import com.app.lockpassword.ui.LockPasswordRoute
+import com.app.lockpassword.ui.LockPasswordViewModel
 import ru.app.lockpassword.ui.theme.LockPasswordTheme
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var viewModel: LockPasswordViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val repository = LockPasswordPrefsRepository(this)
+
+        viewModel = LockPasswordViewModel(
+            repository = repository,
+            isBiometricAvailable = false
+        )
+
         setContent {
             LockPasswordTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                LockPasswordRoute(
+                    viewModel = viewModel,
+                    onResult = { result ->
+                        when (result) {
+                            LockPasswordResult.Success -> {
+                                Toast.makeText(
+                                    this,
+                                    "PIN верный",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            LockPasswordResult.BiometricSuccess -> {
+                                Toast.makeText(
+                                    this,
+                                    "Успех по биометрии",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            LockPasswordResult.Cancelled -> {
+                                finish()
+                            }
+
+                            is LockPasswordResult.InvalidPin -> {
+                                Toast.makeText(
+                                    this,
+                                    "Неверный PIN",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            is LockPasswordResult.Locked -> {
+                                Toast.makeText(
+                                    this,
+                                    "Блокировка на ${result.remainingMinutes} мин.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            is LockPasswordResult.Error -> {
+                                Toast.makeText(
+                                    this,
+                                    "Ошибка",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    },
+                    onBiometricRequest = {
+                        // пока биометрия отключена
+                    }
+                )
             }
         }
-    }
-    //ntnc
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    LockPasswordTheme {
-        Greeting("Android")
     }
 }

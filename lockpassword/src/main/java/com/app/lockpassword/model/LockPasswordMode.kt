@@ -1,7 +1,7 @@
-package com.app.lockpassword.domain
+package com.app.lockpassword.model
 
 enum class LockPasswordMode {
     CREATE,
     CONFIRM,
-    CHECK,
+    ENTER
 }
