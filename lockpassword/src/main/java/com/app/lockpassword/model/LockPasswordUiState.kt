@@ -6,7 +6,7 @@ data class LockPasswordUiState(
     val pinLength: Int = 6,
     val error: LockPasswordError? = null,
     val attemptsLeft: Int? = null,
-    val remainingMinutes: Long? = null,
+    val remainingLockSeconds: Long? = null,
     val isBiometricAvailable: Boolean = false,
     val showBiometricButton: Boolean = false,
     val shouldAutoLaunchBiometric: Boolean = false

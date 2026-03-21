@@ -8,6 +8,8 @@ import com.app.lockpassword.model.LockPasswordMode
 import com.app.lockpassword.model.LockPasswordUiState
 import com.app.lockpassword.storage.LockPasswordPrefsRepository
 import com.app.lockpassword.util.LockDurationPolicy
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -40,16 +42,25 @@ class LockPasswordViewModel(
     private val _resultEvents = MutableSharedFlow<LockPasswordResult>()
     val resultEvents: SharedFlow<LockPasswordResult> = _resultEvents.asSharedFlow()
 
+    private val _uiEffects = MutableSharedFlow<LockPasswordUiEffect>(extraBufferCapacity = 1)
+    val uiEffects: SharedFlow<LockPasswordUiEffect> = _uiEffects.asSharedFlow()
+
     private var firstPin: String? = null
+    private var lockCountdownJob: Job? = null
 
     init {
-        checkLockState()
+        restoreLockState()
+    }
+
+    override fun onCleared() {
+        lockCountdownJob?.cancel()
+        super.onCleared()
     }
 
     fun onDigitClick(digit: Int) {
         val state = _uiState.value
 
-        if (state.remainingMinutes != null) return
+        if (state.remainingLockSeconds != null) return
         if (state.input.length >= state.pinLength) return
 
         val newInput = state.input + digit.toString()
@@ -57,6 +68,7 @@ class LockPasswordViewModel(
         _uiState.value = state.copy(
             input = newInput,
             error = null,
+            attemptsLeft = null,
             showBiometricButton = false,
             shouldAutoLaunchBiometric = false
         )
@@ -79,10 +91,11 @@ class LockPasswordViewModel(
         _uiState.value = state.copy(
             input = newInput,
             error = null,
+            attemptsLeft = null,
             showBiometricButton = shouldShowBiometricButton(
                 mode = state.mode,
                 input = newInput,
-                remainingMinutes = state.remainingMinutes
+                remainingLockSeconds = state.remainingLockSeconds
             )
         )
     }
@@ -92,24 +105,23 @@ class LockPasswordViewModel(
     }
 
     fun onBiometricSuccess() {
-        repository.setErrorCount(0)
-        repository.clearLockTimestamp()
+        clearSecurityState(resetLockoutLevel = true)
 
         _uiState.value = _uiState.value.copy(
             input = "",
             error = null,
             attemptsLeft = null,
-            remainingMinutes = null,
+            remainingLockSeconds = null,
             showBiometricButton = shouldShowBiometricButton(
                 mode = _uiState.value.mode,
                 input = "",
-                remainingMinutes = null
-            )
+                remainingLockSeconds = null
+            ),
+            shouldAutoLaunchBiometric = false
         )
 
         emitResult(LockPasswordResult.BiometricSuccess)
     }
-
 
     fun onBiometricError() {
         val state = _uiState.value
@@ -118,58 +130,17 @@ class LockPasswordViewModel(
             showBiometricButton = shouldShowBiometricButton(
                 mode = state.mode,
                 input = state.input,
-                remainingMinutes = state.remainingMinutes
+                remainingLockSeconds = state.remainingLockSeconds
             )
         )
     }
 
     fun onEmailChange(value: String) {
-        // пока поле email не используется
+        // пока не используем
     }
 
     fun refreshLockState() {
-        checkLockState()
-    }
-
-    private fun checkLockState() {
-        val errorCount = repository.getErrorCount()
-        val lockTimestamp = repository.getLockTimestamp()
-
-        val remainingMinutes = LockDurationPolicy.getRemainingMinutes(
-            lockTimestamp = lockTimestamp,
-            errorCycle = if (errorCount <= 0) 1 else errorCount
-        )
-
-        if (remainingMinutes != null) {
-            _uiState.value = _uiState.value.copy(
-                input = "",
-                error = LockPasswordError.LOCKED,
-                remainingMinutes = remainingMinutes,
-                attemptsLeft = null,
-                showBiometricButton = false
-            )
-
-            emitResult(LockPasswordResult.Locked(remainingMinutes))
-        } else {
-            repository.clearLockTimestamp()
-
-            val currentState = _uiState.value
-
-            _uiState.value = currentState.copy(
-                remainingMinutes = null,
-                error = null,
-                showBiometricButton = shouldShowBiometricButton(
-                    mode = currentState.mode,
-                    input = currentState.input,
-                    remainingMinutes = null
-                ),
-                shouldAutoLaunchBiometric = shouldShowBiometricButton(
-                    mode = currentState.mode,
-                    input = currentState.input,
-                    remainingMinutes = null
-                )
-            )
-        }
+        restoreLockState()
     }
 
     fun onBiometricPromptShown() {
@@ -178,7 +149,85 @@ class LockPasswordViewModel(
         )
     }
 
+    private fun restoreLockState() {
+        val remainingSeconds = LockDurationPolicy.getRemainingLockSeconds(
+            lockedUntilTimestamp = repository.getLockedUntilTimestamp()
+        )
 
+        if (remainingSeconds != null) {
+            _uiState.value = _uiState.value.copy(
+                input = "",
+                error = LockPasswordError.LOCKED,
+                attemptsLeft = 0,
+                remainingLockSeconds = remainingSeconds,
+                showBiometricButton = false,
+                shouldAutoLaunchBiometric = false
+            )
+
+            startLockCountdown()
+            return
+        }
+
+        lockCountdownJob?.cancel()
+        repository.clearLockedUntilTimestamp()
+        repository.setFailedAttempts(0)
+
+        val currentState = _uiState.value
+        _uiState.value = currentState.copy(
+            input = "",
+            error = null,
+            attemptsLeft = null,
+            remainingLockSeconds = null,
+            showBiometricButton = shouldShowBiometricButton(
+                mode = currentState.mode,
+                input = "",
+                remainingLockSeconds = null
+            ),
+            shouldAutoLaunchBiometric = false
+        )
+    }
+
+    private fun startLockCountdown() {
+        lockCountdownJob?.cancel()
+        lockCountdownJob = viewModelScope.launch {
+            while (true) {
+                val remainingSeconds = LockDurationPolicy.getRemainingLockSeconds(
+                    lockedUntilTimestamp = repository.getLockedUntilTimestamp()
+                )
+
+                if (remainingSeconds == null) {
+                    repository.clearLockedUntilTimestamp()
+                    repository.setFailedAttempts(0)
+
+                    val currentState = _uiState.value
+                    _uiState.value = currentState.copy(
+                        input = "",
+                        error = null,
+                        attemptsLeft = null,
+                        remainingLockSeconds = null,
+                        showBiometricButton = shouldShowBiometricButton(
+                            mode = currentState.mode,
+                            input = "",
+                            remainingLockSeconds = null
+                        ),
+                        shouldAutoLaunchBiometric = false
+                    )
+                    break
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    input = "",
+                    error = LockPasswordError.LOCKED,
+                    attemptsLeft = 0,
+                    remainingLockSeconds = remainingSeconds,
+                    showBiometricButton = false,
+                    shouldAutoLaunchBiometric = false
+                )
+
+                delay(1000L)
+            }
+        }
+    }
 
     private fun handleCreatePin(input: String) {
         firstPin = input
@@ -188,7 +237,7 @@ class LockPasswordViewModel(
             mode = LockPasswordMode.CONFIRM,
             error = null,
             attemptsLeft = null,
-            remainingMinutes = null,
+            remainingLockSeconds = null,
             showBiometricButton = false
         )
     }
@@ -202,15 +251,17 @@ class LockPasswordViewModel(
                 mode = LockPasswordMode.CREATE,
                 error = LockPasswordError.PIN_MISMATCH,
                 attemptsLeft = null,
-                remainingMinutes = null,
-                showBiometricButton = false
+                remainingLockSeconds = null,
+                showBiometricButton = false,
+                shouldAutoLaunchBiometric = false
             )
+
+            emitUiEffect(LockPasswordUiEffect.WrongPinVibration)
             return
         }
 
         repository.savePin(input)
-        repository.setErrorCount(0)
-        repository.clearLockTimestamp()
+        clearSecurityState(resetLockoutLevel = true)
 
         firstPin = null
 
@@ -219,12 +270,13 @@ class LockPasswordViewModel(
             mode = LockPasswordMode.ENTER,
             error = null,
             attemptsLeft = null,
-            remainingMinutes = null,
+            remainingLockSeconds = null,
             showBiometricButton = shouldShowBiometricButton(
                 mode = LockPasswordMode.ENTER,
                 input = "",
-                remainingMinutes = null
-            )
+                remainingLockSeconds = null
+            ),
+            shouldAutoLaunchBiometric = false
         )
 
         emitResult(LockPasswordResult.Success)
@@ -234,68 +286,96 @@ class LockPasswordViewModel(
         val savedPin = repository.getPin()
 
         if (savedPin == input) {
-            repository.setErrorCount(0)
-            repository.clearLockTimestamp()
+            clearSecurityState(resetLockoutLevel = true)
 
             _uiState.value = _uiState.value.copy(
                 input = "",
                 error = null,
                 attemptsLeft = null,
-                remainingMinutes = null,
+                remainingLockSeconds = null,
                 showBiometricButton = shouldShowBiometricButton(
                     mode = LockPasswordMode.ENTER,
                     input = "",
-                    remainingMinutes = null
-                )
+                    remainingLockSeconds = null
+                ),
+                shouldAutoLaunchBiometric = false
             )
 
             emitResult(LockPasswordResult.Success)
             return
         }
 
-        val newErrorCount = repository.getErrorCount() + 1
-        repository.setErrorCount(newErrorCount)
-        repository.saveLockTimestamp(System.currentTimeMillis())
+        val failedAttempts = repository.getFailedAttempts() + 1
 
-        val remainingMinutes = LockDurationPolicy.getRemainingMinutes(
-            lockTimestamp = repository.getLockTimestamp(),
-            errorCycle = newErrorCount
-        )
+        if (failedAttempts < LockDurationPolicy.MAX_ATTEMPTS_BEFORE_LOCK) {
+            repository.setFailedAttempts(failedAttempts)
+
+            val attemptsLeft = LockDurationPolicy.getAttemptsLeft(failedAttempts)
+
+            _uiState.value = _uiState.value.copy(
+                input = "",
+                error = LockPasswordError.WRONG_PIN,
+                attemptsLeft = attemptsLeft,
+                remainingLockSeconds = null,
+                showBiometricButton = false,
+                shouldAutoLaunchBiometric = false
+            )
+
+            emitUiEffect(LockPasswordUiEffect.WrongPinVibration)
+            emitResult(LockPasswordResult.InvalidPin(attemptsLeft))
+            return
+        }
+
+        val nextLockoutLevel = repository.getLockoutLevel() + 1
+        val lockedUntil = System.currentTimeMillis() +
+                LockDurationPolicy.getLockDurationMillis(nextLockoutLevel)
+
+        repository.setLockoutLevel(nextLockoutLevel)
+        repository.setFailedAttempts(0)
+        repository.setLockedUntilTimestamp(lockedUntil)
+
+        val remainingSeconds = LockDurationPolicy.getRemainingLockSeconds(
+            lockedUntilTimestamp = lockedUntil
+        ) ?: 0L
 
         _uiState.value = _uiState.value.copy(
             input = "",
-            error = if (remainingMinutes != null) {
-                LockPasswordError.LOCKED
-            } else {
-                LockPasswordError.WRONG_PIN
-            },
-            remainingMinutes = remainingMinutes,
-            attemptsLeft = null,
-            showBiometricButton = false
+            error = LockPasswordError.LOCKED,
+            attemptsLeft = 0,
+            remainingLockSeconds = remainingSeconds,
+            showBiometricButton = false,
+            shouldAutoLaunchBiometric = false
         )
 
-        if (remainingMinutes != null) {
-            emitResult(LockPasswordResult.Locked(remainingMinutes))
-        } else {
-            emitResult(LockPasswordResult.InvalidPin())
-        }
+        startLockCountdown()
+        emitUiEffect(LockPasswordUiEffect.LockedVibration)
+        emitResult(LockPasswordResult.Locked(remainingSeconds))
     }
 
     private fun shouldShowBiometricButton(
         mode: LockPasswordMode,
         input: String,
-        remainingMinutes: Long?
+        remainingLockSeconds: Long?
     ): Boolean {
         return repository.hasPin() &&
                 isBiometricAvailable &&
                 mode == LockPasswordMode.ENTER &&
                 input.isEmpty() &&
-                remainingMinutes == null
+                remainingLockSeconds == null
+    }
+
+    private fun clearSecurityState(resetLockoutLevel: Boolean) {
+        lockCountdownJob?.cancel()
+        repository.clearSecurityState(resetLockoutLevel = resetLockoutLevel)
     }
 
     private fun emitResult(result: LockPasswordResult) {
         viewModelScope.launch {
             _resultEvents.emit(result)
         }
+    }
+
+    private fun emitUiEffect(effect: LockPasswordUiEffect) {
+        _uiEffects.tryEmit(effect)
     }
 }

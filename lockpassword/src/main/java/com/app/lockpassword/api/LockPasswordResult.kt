@@ -13,7 +13,7 @@ sealed interface LockPasswordResult {
     ) : LockPasswordResult
 
     data class Locked(
-        val remainingMinutes: Long
+        val remainingSeconds: Long
     ) : LockPasswordResult
 
     data class Error(

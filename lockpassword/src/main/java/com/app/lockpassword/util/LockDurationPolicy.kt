@@ -2,30 +2,30 @@ package com.app.lockpassword.util
 
 object LockDurationPolicy {
 
-    fun getDurationMillis(errorCycle: Int): Long {
-        return when (errorCycle) {
-            1 -> 1 * 60 * 1000L
-            2 -> 5 * 60 * 1000L
-            3 -> 30 * 60 * 1000L
-            else -> 60 * 60 * 1000L
+    const val MAX_ATTEMPTS_BEFORE_LOCK = 3
+
+    fun getAttemptsLeft(failedAttempts: Int): Int {
+        return (MAX_ATTEMPTS_BEFORE_LOCK - failedAttempts).coerceAtLeast(0)
+    }
+
+    fun getLockDurationMillis(lockoutLevel: Int): Long {
+        return when (lockoutLevel) {
+            1 -> 30_000L
+            2 -> 60_000L
+            3 -> 5 * 60_000L
+            else -> 15 * 60_000L
         }
     }
 
-    fun getRemainingMinutes(
-        lockTimestamp: Long,
-        errorCycle: Int,
+    fun getRemainingLockSeconds(
+        lockedUntilTimestamp: Long,
         currentTimeMillis: Long = System.currentTimeMillis()
     ): Long? {
-        if (lockTimestamp <= 0L) return null
+        if (lockedUntilTimestamp <= 0L) return null
 
-        val duration = getDurationMillis(errorCycle)
-        val remaining = duration - (currentTimeMillis - lockTimestamp)
-
+        val remaining = lockedUntilTimestamp - currentTimeMillis
         if (remaining <= 0L) return null
 
-        val minutes = remaining / (60 * 1000L)
-        val seconds = (remaining % (60 * 1000L)) / 1000L
-
-        return if (seconds > 0) minutes + 1 else minutes
+        return (remaining + 999L) / 1000L
     }
 }

@@ -1,7 +1,9 @@
 package com.app.lockpassword.api
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,15 +19,20 @@ class LockPasswordActivity : FragmentActivity() {
     private lateinit var viewModel: LockPasswordViewModel
     private lateinit var biometricAuthManager: BiometricAuthManager
 
+    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         val repository = LockPasswordPrefsRepository(this)
         val biometricEnabled = intent.getBooleanExtra(
             LockPasswordLauncher.EXTRA_BIOMETRIC_ENABLED,
             false
         )
+
+        val uiConfig = readUiConfig()
 
         biometricAuthManager = BiometricAuthManager(this)
 
@@ -35,7 +42,7 @@ class LockPasswordActivity : FragmentActivity() {
         )
 
         setContent {
-            LockPasswordTheme {
+            LockPasswordTheme(uiConfig = uiConfig) {
                 LockPasswordRoute(
                     viewModel = viewModel,
                     onResult = { result ->
@@ -78,6 +85,18 @@ class LockPasswordActivity : FragmentActivity() {
                 )
             }
         }
+    }
+
+    private fun readUiConfig(): LockPasswordUiConfig {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(
+                LockPasswordLauncher.EXTRA_UI_CONFIG,
+                LockPasswordUiConfig::class.java
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(LockPasswordLauncher.EXTRA_UI_CONFIG)
+        } ?: LockPasswordDefaults.uiConfig()
     }
 
     private fun finishWithResult(resultCodeValue: Int) {

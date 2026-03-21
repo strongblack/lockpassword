@@ -16,10 +16,18 @@
     <string name="lock_biometric_title">Confirm sign in</string>
     <string name="lock_biometric_subtitle">Use biometrics to continue</string>
 
-    <plurals name="lock_remaining_minutes">
-        <item quantity="one">%d minute remaining</item>
-        <item quantity="other">%d minutes remaining</item>
+    <plurals name="lock_attempts_left">
+        <item quantity="one">%1$d attempt left before temporary lock</item>
+        <item quantity="other">%1$d attempts left before temporary lock</item>
     </plurals>
 
+
+    <string name="lock_time_seconds">%1$d sec</string>
+    <string name="lock_time_minutes">%1$d min</string>
+    <string name="lock_time_minutes_seconds">%1$d min %2$d sec</string>
+
+    <string name="lock_message_pin_mismatch_repeat">Enter the new PIN again</string>
     <string name="lock_biometric_icon">iconLock</string>
+    <string name="lock_message_try_again">Please try again</string>
+    <string name="lock_message_try_later">Try again in %1$s</string>
 </resources>

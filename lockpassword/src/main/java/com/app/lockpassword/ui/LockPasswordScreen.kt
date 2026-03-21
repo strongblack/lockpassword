@@ -4,18 +4,24 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -30,19 +36,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.app.lockpassword.R
 import com.app.lockpassword.model.LockPasswordError
 import com.app.lockpassword.model.LockPasswordMode
 import com.app.lockpassword.model.LockPasswordUiState
-
-private val keyButtonSize = 80.dp
+import com.app.lockpassword.ui.theme.LockPasswordThemeTokens
+import kotlin.math.min
 
 @Composable
 fun LockPasswordScreen(
@@ -54,90 +62,332 @@ fun LockPasswordScreen(
     onEmailChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isLocked = uiState.remainingLockSeconds != null
+    val colors = LockPasswordThemeTokens.colors
+    val sizes = LockPasswordThemeTokens.sizes
+
     val titleText = when (uiState.mode) {
         LockPasswordMode.CREATE -> stringResource(R.string.lock_title_create)
         LockPasswordMode.CONFIRM -> stringResource(R.string.lock_title_repeat)
         LockPasswordMode.ENTER -> stringResource(R.string.lock_title_enter)
     }
 
-    val errorText = when (uiState.error) {
-        LockPasswordError.PIN_MISMATCH -> stringResource(R.string.lock_error_pin_mismatch)
-        LockPasswordError.WRONG_PIN -> stringResource(R.string.lock_error_wrong_pin)
-        LockPasswordError.LOCKED -> stringResource(R.string.lock_error_locked)
-        LockPasswordError.UNKNOWN -> stringResource(R.string.lock_error_unknown)
-        null -> null
+    val messageTitle: String?
+    val messageDescription: String?
+    val messageIsError: Boolean
+
+    when {
+        uiState.error == LockPasswordError.LOCKED && uiState.remainingLockSeconds != null -> {
+            messageTitle = stringResource(R.string.lock_error_locked)
+            messageDescription = stringResource(
+                R.string.lock_message_try_later,
+                formatLockTime(uiState.remainingLockSeconds)
+            )
+            messageIsError = true
+        }
+
+        uiState.error == LockPasswordError.WRONG_PIN && uiState.attemptsLeft != null -> {
+            messageTitle = stringResource(R.string.lock_error_wrong_pin)
+            messageDescription = formatAttemptsLeftText(uiState.attemptsLeft)
+            messageIsError = true
+        }
+
+        uiState.error == LockPasswordError.PIN_MISMATCH -> {
+            messageTitle = stringResource(R.string.lock_error_pin_mismatch)
+            messageDescription = stringResource(R.string.lock_message_pin_mismatch_repeat)
+            messageIsError = true
+        }
+
+        uiState.error == LockPasswordError.UNKNOWN -> {
+            messageTitle = stringResource(R.string.lock_error_unknown)
+            messageDescription = stringResource(R.string.lock_message_try_again)
+            messageIsError = true
+        }
+
+        else -> {
+            messageTitle = null
+            messageDescription = null
+            messageIsError = false
+        }
     }
 
-    val bottomLeftText = when {
-        uiState.remainingMinutes != null -> stringResource(R.string.lock_action_cancel)
-        else -> ""
-    }
+    val showErrorBlock = messageTitle != null && messageDescription != null
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = colors.screenBackground
+    ) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+        ) {
+            val metrics = lockScreenMetrics(
+                maxWidth = maxWidth,
+                maxHeight = maxHeight,
+                buttonScale = sizes.buttonScale
+            )
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = metrics.contentMaxWidth)
+                        .padding(horizontal = metrics.horizontalPadding)
+                        .imePadding(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    LockHeroHeader(
+                        isLocked = isLocked,
+                        outerSize = metrics.heroOuterSize,
+                        innerSize = metrics.heroInnerSize,
+                        iconSize = metrics.heroIconSize
+                    )
+
+                    Spacer(modifier = Modifier.height(metrics.spaceAfterHeader))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = metrics.messageBlockMinHeight),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (showErrorBlock) {
+                            LockMessageCard(
+                                title = messageTitle.orEmpty(),
+                                description = messageDescription.orEmpty(),
+                                isError = messageIsError,
+                                cornerRadius = metrics.messageCornerRadius,
+                                horizontalPadding = metrics.messageHorizontalPadding,
+                                verticalPadding = metrics.messageVerticalPadding,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = titleText,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    textAlign = TextAlign.Center,
+                                    color = colors.title
+                                )
+
+                                Spacer(modifier = Modifier.height(metrics.spaceBetweenTitleAndDots))
+
+                                PinDotsRow(
+                                    enteredCount = uiState.input.length,
+                                    pinLength = uiState.pinLength,
+                                    dotSize = metrics.dotSize,
+                                    dotSpacing = metrics.dotSpacing
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(metrics.spaceBeforeKeyboard))
+
+                    LockKeyboard(
+                        bottomLeftText = if (isLocked) {
+                            stringResource(R.string.lock_action_cancel)
+                        } else {
+                            ""
+                        },
+                        showBiometricButton = uiState.showBiometricButton,
+                        hasInput = uiState.input.isNotEmpty(),
+                        keypadEnabled = !isLocked,
+                        keyButtonSize = metrics.keyButtonSize,
+                        keyGridSpacing = metrics.keyGridSpacing,
+                        keyGridPadding = metrics.keyGridPadding,
+                        backspaceIconSize = metrics.backspaceIconSize,
+                        biometricIconSize = metrics.biometricIconSize,
+                        onDigitClick = onDigitClick,
+                        onBackspaceClick = onBackspaceClick,
+                        onBiometricClick = onBiometricClick,
+                        onBottomLeftClick = onBottomLeftClick
+                    )
+                }
+            }
+        }
+    }
+}
+
+private data class LockScreenMetrics(
+    val contentMaxWidth: Dp,
+    val horizontalPadding: Dp,
+    val heroOuterSize: Dp,
+    val heroInnerSize: Dp,
+    val heroIconSize: Dp,
+    val spaceAfterHeader: Dp,
+    val messageBlockMinHeight: Dp,
+    val messageCornerRadius: Dp,
+    val messageHorizontalPadding: Dp,
+    val messageVerticalPadding: Dp,
+    val spaceBetweenTitleAndDots: Dp,
+    val spaceBeforeKeyboard: Dp,
+    val dotSize: Dp,
+    val dotSpacing: Dp,
+    val keyButtonSize: Dp,
+    val keyGridSpacing: Dp,
+    val keyGridPadding: Dp,
+    val backspaceIconSize: Dp,
+    val biometricIconSize: Dp
+)
+
+private fun lockScreenMetrics(
+    maxWidth: Dp,
+    maxHeight: Dp,
+    buttonScale: Float
+): LockScreenMetrics {
+    val widthScale = (maxWidth.value / 360f).coerceIn(0.92f, 1.12f)
+    val heightScale = (maxHeight.value / 780f).coerceIn(0.88f, 1.06f)
+    val scale = min(widthScale, heightScale)
+
+    val compactWidth = maxWidth < 360.dp
+    val compactHeight = maxHeight < 700.dp
+    val normalizedButtonScale = buttonScale.coerceIn(0.85f, 1.15f)
+
+    fun scaled(value: Float): Dp = (value * scale).dp
+    fun scaledBy(base: Dp, factor: Float): Dp = (base.value * factor).dp
+
+    return LockScreenMetrics(
+        contentMaxWidth = 420.dp,
+        horizontalPadding = if (compactWidth) 16.dp else 24.dp,
+        heroOuterSize = scaled(108f).coerceIn(96.dp, 116.dp),
+        heroInnerSize = scaled(84f).coerceIn(74.dp, 92.dp),
+        heroIconSize = scaled(42f).coerceIn(36.dp, 46.dp),
+        spaceAfterHeader = if (compactHeight) 12.dp else scaled(16f),
+        messageBlockMinHeight = if (compactHeight) 86.dp else scaled(100f),
+        messageCornerRadius = scaled(20f).coerceIn(16.dp, 22.dp),
+        messageHorizontalPadding = scaled(18f).coerceIn(14.dp, 20.dp),
+        messageVerticalPadding = scaled(14f).coerceIn(12.dp, 16.dp),
+        spaceBetweenTitleAndDots = if (compactHeight) 14.dp else scaled(20f),
+        spaceBeforeKeyboard = if (compactHeight) 10.dp else scaled(18f),
+        dotSize = scaled(14f).coerceIn(12.dp, 16.dp),
+        dotSpacing = scaled(8f).coerceIn(6.dp, 10.dp),
+        keyButtonSize = scaledBy(
+            scaled(80f).coerceIn(68.dp, 88.dp),
+            normalizedButtonScale
+        ).coerceIn(64.dp, 96.dp),
+
+        keyGridSpacing = scaled(12f).coerceIn(8.dp, 14.dp),
+        keyGridPadding = scaled(8f).coerceIn(4.dp, 10.dp),
+
+        backspaceIconSize = scaledBy(
+            scaled(54f).coerceIn(42.dp, 58.dp),
+            normalizedButtonScale
+        ).coerceIn(40.dp, 64.dp),
+
+        biometricIconSize = scaledBy(
+            scaled(64f).coerceIn(50.dp, 68.dp),
+            normalizedButtonScale
+        ).coerceIn(48.dp, 74.dp)
+    )
+}
+
+@Composable
+private fun LockHeroHeader(
+    isLocked: Boolean,
+    outerSize: Dp,
+    innerSize: Dp,
+    iconSize: Dp,
+    modifier: Modifier = Modifier
+) {
+    val colors = LockPasswordThemeTokens.colors
+
+    Box(
+        modifier = modifier.size(outerSize),
+        contentAlignment = Alignment.Center
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            modifier = Modifier
+                .size(outerSize)
+                .clip(CircleShape)
+                .background(colors.lockOuterCircle)
+        )
+
+        Surface(
+            modifier = Modifier.size(innerSize),
+            shape = CircleShape,
+            color = if (isLocked) {
+                colors.errorBackground
+            } else {
+                colors.lockInnerCircle
+            },
+            tonalElevation = 4.dp
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .widthIn(max = 420.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = titleText,
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                PinDotsRow(
-                    enteredCount = uiState.input.length,
-                    pinLength = uiState.pinLength
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                errorText?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-
-                uiState.remainingMinutes?.let { minutes ->
-                    LockStatusBadge(
-                        text = pluralStringResource(
-                            id = R.plurals.lock_remaining_minutes,
-                            count = minutes.toInt(),
-                            minutes
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-
-                LockKeyboard(
-                    bottomLeftText = bottomLeftText,
-                    showBiometricButton = uiState.showBiometricButton,
-                    hasInput = uiState.input.isNotEmpty(),
-                    onDigitClick = onDigitClick,
-                    onBackspaceClick = onBackspaceClick,
-                    onBiometricClick = onBiometricClick,
-                    onBottomLeftClick = onBottomLeftClick
+                Icon(
+                    painter = painterResource(id = R.drawable.lock),
+                    contentDescription = null,
+                    modifier = Modifier.size(iconSize),
+                    tint = if (isLocked) {
+                        colors.errorText
+                    } else {
+                        colors.lockIcon
+                    }
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun LockMessageCard(
+    title: String,
+    description: String,
+    isError: Boolean,
+    cornerRadius: Dp,
+    horizontalPadding: Dp,
+    verticalPadding: Dp,
+    modifier: Modifier = Modifier
+) {
+    val colors = LockPasswordThemeTokens.colors
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(cornerRadius),
+        color = if (isError) {
+            colors.errorBackground
+        } else {
+            colors.lockOuterCircle
+        },
+        tonalElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = horizontalPadding,
+                    vertical = verticalPadding
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                textAlign = TextAlign.Center,
+                color = if (isError) {
+                    colors.errorText
+                } else {
+                    colors.title
+                }
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = colors.messageText
+            )
         }
     }
 }
@@ -146,8 +396,12 @@ fun LockPasswordScreen(
 private fun PinDotsRow(
     enteredCount: Int,
     pinLength: Int,
+    dotSize: Dp,
+    dotSpacing: Dp,
     modifier: Modifier = Modifier
 ) {
+    val colors = LockPasswordThemeTokens.colors
+
     Row(
         modifier = modifier.padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.Center,
@@ -158,19 +412,19 @@ private fun PinDotsRow(
 
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .size(14.dp)
+                    .padding(horizontal = dotSpacing)
+                    .size(dotSize)
                     .clip(CircleShape)
                     .background(
                         if (filled) {
-                            MaterialTheme.colorScheme.primary
+                            colors.dotFilled
                         } else {
-                            MaterialTheme.colorScheme.surfaceVariant
+                            colors.dotEmpty
                         }
                     )
                     .border(
                         width = 1.dp,
-                        color = MaterialTheme.colorScheme.outline,
+                        color = colors.dotBorder,
                         shape = CircleShape
                     )
             )
@@ -183,6 +437,12 @@ private fun LockKeyboard(
     bottomLeftText: String,
     showBiometricButton: Boolean,
     hasInput: Boolean,
+    keypadEnabled: Boolean,
+    keyButtonSize: Dp,
+    keyGridSpacing: Dp,
+    keyGridPadding: Dp,
+    backspaceIconSize: Dp,
+    biometricIconSize: Dp,
     onDigitClick: (String) -> Unit,
     onBackspaceClick: () -> Unit,
     onBiometricClick: () -> Unit,
@@ -190,6 +450,7 @@ private fun LockKeyboard(
     modifier: Modifier = Modifier
 ) {
     val rightBottomItem = when {
+        !keypadEnabled -> KeyItem.Empty
         hasInput -> KeyItem.Backspace
         showBiometricButton -> KeyItem.Biometric
         else -> KeyItem.Empty
@@ -216,15 +477,17 @@ private fun LockKeyboard(
             .fillMaxWidth()
             .wrapContentHeight(),
         userScrollEnabled = false,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(keyGridSpacing),
+        verticalArrangement = Arrangement.spacedBy(keyGridSpacing),
+        contentPadding = PaddingValues(keyGridPadding)
     ) {
         items(items) { item ->
             when (item) {
                 is KeyItem.Digit -> {
                     LockDigitButton(
                         text = item.value,
+                        enabled = keypadEnabled,
+                        buttonSize = keyButtonSize,
                         onClick = { onDigitClick(item.value) }
                     )
                 }
@@ -232,6 +495,7 @@ private fun LockKeyboard(
                 is KeyItem.TextAction -> {
                     LockTextActionButton(
                         text = item.text,
+                        buttonSize = keyButtonSize,
                         onClick = onBottomLeftClick
                     )
                 }
@@ -240,8 +504,10 @@ private fun LockKeyboard(
                     LockIconActionButton(
                         iconResId = R.drawable.backspace,
                         contentDescription = stringResource(R.string.lock_action_delete),
-                        onClick = onBackspaceClick,
-                        iconSize = 54.dp
+                        enabled = keypadEnabled,
+                        buttonSize = keyButtonSize,
+                        iconSize = backspaceIconSize,
+                        onClick = onBackspaceClick
                     )
                 }
 
@@ -249,40 +515,47 @@ private fun LockKeyboard(
                     LockIconActionButton(
                         iconResId = R.drawable.fingerprint,
                         contentDescription = stringResource(R.string.lock_action_biometric),
-                        onClick = onBiometricClick,
-                        iconSize = 64.dp
+                        enabled = keypadEnabled,
+                        buttonSize = keyButtonSize,
+                        iconSize = biometricIconSize,
+                        onClick = onBiometricClick
                     )
                 }
 
                 KeyItem.Empty -> {
-                    LockEmptyButton()
+                    LockEmptyButton(buttonSize = keyButtonSize)
                 }
             }
         }
     }
 }
 
-
 @Composable
 private fun LockIconActionButton(
     iconResId: Int,
     contentDescription: String,
+    enabled: Boolean,
+    buttonSize: Dp,
     onClick: () -> Unit,
-    iconSize: androidx.compose.ui.unit.Dp = 64.dp,
+    iconSize: Dp,
     modifier: Modifier = Modifier
 ) {
+    val colors = LockPasswordThemeTokens.colors
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1f),
+            .aspectRatio(1f)
+            .alpha(if (enabled) 1f else 0.35f),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             onClick = onClick,
-            modifier = Modifier.size(keyButtonSize),
+            enabled = enabled,
+            modifier = Modifier.size(buttonSize),
             shape = CircleShape,
             color = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            contentColor = colors.actionIcon,
             tonalElevation = 2.dp
         ) {
             Box(
@@ -293,7 +566,7 @@ private fun LockIconActionButton(
                     painter = painterResource(id = iconResId),
                     contentDescription = contentDescription,
                     modifier = Modifier.size(iconSize),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = colors.actionIcon
                 )
             }
         }
@@ -303,21 +576,27 @@ private fun LockIconActionButton(
 @Composable
 private fun LockDigitButton(
     text: String,
+    enabled: Boolean,
+    buttonSize: Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = LockPasswordThemeTokens.colors
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1f),
+            .aspectRatio(1f)
+            .alpha(if (enabled) 1f else 0.45f),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             onClick = onClick,
-            modifier = Modifier.size(keyButtonSize),
+            enabled = enabled,
+            modifier = Modifier.size(buttonSize),
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            color = colors.keypadButtonBackground,
+            contentColor = colors.keypadDigit,
             tonalElevation = 2.dp
         ) {
             Box(
@@ -326,7 +605,8 @@ private fun LockDigitButton(
             ) {
                 Text(
                     text = text,
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = colors.keypadDigit
                 )
             }
         }
@@ -336,9 +616,13 @@ private fun LockDigitButton(
 @Composable
 private fun LockTextActionButton(
     text: String,
+    buttonSize: Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = LockPasswordThemeTokens.colors
+    val enabled = text.isNotBlank()
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -347,13 +631,14 @@ private fun LockTextActionButton(
     ) {
         TextButton(
             onClick = onClick,
-            enabled = text.isNotBlank(),
-            modifier = Modifier.size(keyButtonSize)
+            enabled = enabled,
+            modifier = Modifier.size(buttonSize)
         ) {
             Text(
                 text = text,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.actionText.copy(alpha = if (enabled) 1f else 0.35f)
             )
         }
     }
@@ -361,6 +646,7 @@ private fun LockTextActionButton(
 
 @Composable
 private fun LockEmptyButton(
+    buttonSize: Dp,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -369,27 +655,40 @@ private fun LockEmptyButton(
             .aspectRatio(1f),
         contentAlignment = Alignment.Center
     ) {
-        Spacer(modifier = Modifier.size(keyButtonSize))
+        Spacer(modifier = Modifier.size(buttonSize))
     }
 }
 
 @Composable
-private fun LockStatusBadge(
-    text: String,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center
-        )
+private fun formatAttemptsLeftText(attemptsLeft: Int): String {
+    return pluralStringResource(
+        id = R.plurals.lock_attempts_left,
+        count = attemptsLeft,
+        attemptsLeft
+    )
+}
+
+@Composable
+private fun formatLockTime(seconds: Long): String {
+    val minutes = seconds / 60
+    val secs = seconds % 60
+
+    return when {
+        minutes > 0 && secs > 0 -> {
+            stringResource(
+                R.string.lock_time_minutes_seconds,
+                minutes,
+                secs
+            )
+        }
+
+        minutes > 0 -> {
+            stringResource(R.string.lock_time_minutes, minutes)
+        }
+
+        else -> {
+            stringResource(R.string.lock_time_seconds, secs)
+        }
     }
 }
 

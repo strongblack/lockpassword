@@ -2,6 +2,7 @@ package com.app.lockpassword.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 
 class LockPasswordPrefsRepository(
     context: Context
@@ -15,7 +16,7 @@ class LockPasswordPrefsRepository(
     }
 
     fun savePin(pin: String) {
-        prefs.edit().putString(KEY_PIN, pin).apply()
+        prefs.edit { putString(KEY_PIN, pin) }
     }
 
     fun getPin(): String? {
@@ -23,33 +24,53 @@ class LockPasswordPrefsRepository(
     }
 
     fun clearPin() {
-        prefs.edit().remove(KEY_PIN).apply()
+        prefs.edit { remove(KEY_PIN) }
     }
 
-    fun getErrorCount(): Int {
-        return prefs.getInt(KEY_ERROR_COUNT, 0)
+    fun getFailedAttempts(): Int {
+        return prefs.getInt(KEY_FAILED_ATTEMPTS, 0)
     }
 
-    fun setErrorCount(value: Int) {
-        prefs.edit().putInt(KEY_ERROR_COUNT, value).apply()
+    fun setFailedAttempts(value: Int) {
+        prefs.edit { putInt(KEY_FAILED_ATTEMPTS, value) }
     }
 
-    fun saveLockTimestamp(timestamp: Long) {
-        prefs.edit().putLong(KEY_LOCK_TIMESTAMP, timestamp).apply()
+    fun getLockoutLevel(): Int {
+        return prefs.getInt(KEY_LOCKOUT_LEVEL, 0)
     }
 
-    fun getLockTimestamp(): Long {
-        return prefs.getLong(KEY_LOCK_TIMESTAMP, 0L)
+    fun setLockoutLevel(value: Int) {
+        prefs.edit { putInt(KEY_LOCKOUT_LEVEL, value) }
     }
 
-    fun clearLockTimestamp() {
-        prefs.edit().remove(KEY_LOCK_TIMESTAMP).apply()
+    fun getLockedUntilTimestamp(): Long {
+        return prefs.getLong(KEY_LOCKED_UNTIL_TIMESTAMP, 0L)
+    }
+
+    fun setLockedUntilTimestamp(value: Long) {
+        prefs.edit { putLong(KEY_LOCKED_UNTIL_TIMESTAMP, value) }
+    }
+
+    fun clearLockedUntilTimestamp() {
+        prefs.edit { remove(KEY_LOCKED_UNTIL_TIMESTAMP) }
+    }
+
+    fun clearSecurityState(resetLockoutLevel: Boolean = true) {
+        prefs.edit {
+            putInt(KEY_FAILED_ATTEMPTS, 0)
+            remove(KEY_LOCKED_UNTIL_TIMESTAMP)
+
+            if (resetLockoutLevel) {
+                putInt(KEY_LOCKOUT_LEVEL, 0)
+            }
+        }
     }
 
     private companion object {
         const val PREFS_NAME = "lock_password_prefs"
         const val KEY_PIN = "key_pin"
-        const val KEY_ERROR_COUNT = "key_error_count"
-        const val KEY_LOCK_TIMESTAMP = "key_lock_timestamp"
+        const val KEY_FAILED_ATTEMPTS = "key_failed_attempts"
+        const val KEY_LOCKOUT_LEVEL = "key_lockout_level"
+        const val KEY_LOCKED_UNTIL_TIMESTAMP = "key_locked_until_timestamp"
     }
 }

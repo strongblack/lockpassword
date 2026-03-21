@@ -16,12 +16,22 @@
     <string name="lock_biometric_title">Подтвердите вход</string>
     <string name="lock_biometric_subtitle">Используйте биометрию для продолжения</string>
 
-    <plurals name="lock_remaining_minutes">
-        <item quantity="one">Осталось %d минута</item>
-        <item quantity="few">Осталось %d минуты</item>
-        <item quantity="many">Осталось %d минут</item>
-        <item quantity="other">Осталось %d минуты</item>
+    <plurals name="lock_attempts_left">
+        <item quantity="one">Осталась %1$d попытка до временной блокировки</item>
+        <item quantity="few">Осталось %1$d попытки до временной блокировки</item>
+        <item quantity="many">Осталось %1$d попыток до временной блокировки</item>
+        <item quantity="other">Осталось %1$d попыток до временной блокировки</item>
     </plurals>
 
+    <string name="lock_time_seconds">%1$d сек</string>
+    <string name="lock_time_minutes">%1$d мин</string>
+    <string name="lock_time_minutes_seconds">%1$d мин %2$d сек</string>
+
+    <string name="lock_message_pin_mismatch_repeat">Введите новый PIN-код ещё раз</string>
     <string name="lock_biometric_icon">iconLock</string>
+    <string name="lock_message_try_again">Попробуйте ещё раз</string>
+    <string name="lock_message_try_later">Попробуйте снова через %1$s</string>
+
+
+
 </resources>

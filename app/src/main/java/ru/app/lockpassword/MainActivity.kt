@@ -15,7 +15,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import com.app.lockpassword.api.LockPasswordActivity
+import com.app.lockpassword.api.LockPasswordDefaults
 import com.app.lockpassword.api.LockPasswordLauncher
 import ru.app.lockpassword.ui.theme.LockPasswordTheme
 
@@ -64,9 +67,56 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Button(
                             onClick = {
-                                val intent: Intent = LockPasswordLauncher.createIntent(
+
+                                val uiConfig = LockPasswordDefaults.uiConfig().apply {
+                                    sizes.buttonScale = 1.08f
+                                    lightColors.screenBackgroundColor = Color(0xFFF8FAFC).toArgb()
+                                    lightColors.titleColor = Color(0xFF111827).toArgb()
+
+                                    lightColors.keypadButtonBackgroundColor = Color(0xFFE0E7FF).toArgb()
+                                    lightColors.keypadDigitColor = Color(0xFF1E3A8A).toArgb()
+
+                                    lightColors.lockOuterCircleColor = Color(0xFFE5E7EB).toArgb()
+                                    lightColors.lockInnerCircleColor = Color(0xFFE0E7FF).toArgb()
+                                    lightColors.lockIconColor = Color(0xFF2563EB).toArgb()
+
+                                    lightColors.dotEmptyColor = Color(0xFFE5E7EB).toArgb()
+                                    lightColors.dotFilledColor = Color(0xFF2563EB).toArgb()
+                                    lightColors.dotBorderColor = Color(0xFF9CA3AF).toArgb()
+
+                                    lightColors.actionIconColor = Color(0xFF374151).toArgb()
+                                    lightColors.actionTextColor = Color(0xFF374151).toArgb()
+
+                                    lightColors.errorTextColor = Color(0xFFB3261E).toArgb()
+                                    lightColors.errorBackgroundColor = Color(0xFFFFDAD6).toArgb()
+                                    lightColors.messageTextColor = Color(0xFF374151).toArgb()
+
+                                    darkColors.screenBackgroundColor = Color(0xFF0F1115).toArgb()
+                                    darkColors.titleColor = Color(0xFFF9FAFB).toArgb()
+
+                                    darkColors.keypadButtonBackgroundColor = Color(0xFF1F2937).toArgb()
+                                    darkColors.keypadDigitColor = Color(0xFFF9FAFB).toArgb()
+
+                                    darkColors.lockOuterCircleColor = Color(0xFF374151).toArgb()
+                                    darkColors.lockInnerCircleColor = Color(0xFF1F2937).toArgb()
+                                    darkColors.lockIconColor = Color(0xFF93C5FD).toArgb()
+
+                                    darkColors.dotEmptyColor = Color(0xFF374151).toArgb()
+                                    darkColors.dotFilledColor = Color(0xFF93C5FD).toArgb()
+                                    darkColors.dotBorderColor = Color(0xFF6B7280).toArgb()
+
+                                    darkColors.actionIconColor = Color(0xFFD1D5DB).toArgb()
+                                    darkColors.actionTextColor = Color(0xFFD1D5DB).toArgb()
+
+                                    darkColors.errorTextColor = Color(0xFFCF6679).toArgb()
+                                    darkColors.errorBackgroundColor = Color(0xFF601410).toArgb()
+                                    darkColors.messageTextColor = Color(0xFFD1D5DB).toArgb()
+                                }
+
+                                val intent = LockPasswordLauncher.createIntent(
                                     context = this@MainActivity,
-                                    biometricEnabled = true
+                                    biometricEnabled = true,
+                                    uiConfig = uiConfig
                                 )
                                 lockLauncher.launch(intent)
                             }

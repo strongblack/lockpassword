@@ -1,23 +1,23 @@
 package com.app.lockpassword.ui
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.app.lockpassword.model.LockPasswordError
 import com.app.lockpassword.model.LockPasswordMode
 import com.app.lockpassword.model.LockPasswordUiState
+import com.app.lockpassword.ui.theme.LockPasswordTheme
 
 @Preview(showBackground = true)
 @Composable
 private fun LockPasswordScreenCreatePreview() {
-    MaterialTheme {
+    LockPasswordTheme {
         LockPasswordScreen(
             uiState = LockPasswordUiState(
                 mode = LockPasswordMode.CREATE,
                 input = "12",
                 pinLength = 6,
                 error = null,
-                remainingMinutes = null,
+                remainingLockSeconds = null,
                 showBiometricButton = false
             ),
             onDigitClick = {},
@@ -32,14 +32,14 @@ private fun LockPasswordScreenCreatePreview() {
 @Preview(showBackground = true)
 @Composable
 private fun LockPasswordScreenUnlockPreview() {
-    MaterialTheme {
+    LockPasswordTheme {
         LockPasswordScreen(
             uiState = LockPasswordUiState(
                 mode = LockPasswordMode.ENTER,
                 input = "123",
                 pinLength = 6,
                 error = LockPasswordError.WRONG_PIN,
-                remainingMinutes = null,
+                remainingLockSeconds = null,
                 showBiometricButton = true
             ),
             onDigitClick = {},
@@ -54,14 +54,14 @@ private fun LockPasswordScreenUnlockPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun LockPasswordScreenLockedPreview() {
-    MaterialTheme {
+    LockPasswordTheme {
         LockPasswordScreen(
             uiState = LockPasswordUiState(
                 mode = LockPasswordMode.ENTER,
                 input = "",
                 pinLength = 6,
                 error = LockPasswordError.LOCKED,
-                remainingMinutes = 5,
+                remainingLockSeconds = 5,
                 showBiometricButton = false
             ),
             onDigitClick = {},
