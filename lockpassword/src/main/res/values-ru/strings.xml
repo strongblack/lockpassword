@@ -28,10 +28,20 @@
     <string name="lock_time_minutes_seconds">%1$d мин %2$d сек</string>
 
     <string name="lock_message_pin_mismatch_repeat">Введите новый PIN-код ещё раз</string>
-    <string name="lock_biometric_icon">iconLock</string>
     <string name="lock_message_try_again">Попробуйте ещё раз</string>
     <string name="lock_message_try_later">Попробуйте снова через %1$s</string>
 
+    <string name="lock_biometric_icon">iconLock</string>
 
+    <string name="lock_security_preset_fast_title">Быстро</string>
+    <string name="lock_security_preset_balanced_title">Баланс</string>
+    <string name="lock_security_preset_strong_title">Максимальная защита</string>
+    <string name="lock_security_preset_custom_title">Пользовательский</string>
 
+    <string name="lock_security_preset_fast_description">Быстрая проверка PIN-кода с меньшей нагрузкой на устройство</string>
+    <string name="lock_security_preset_balanced_description">Оптимальный баланс между скоростью и защитой</string>
+    <string name="lock_security_preset_strong_description">Повышенный уровень защиты, проверка PIN-кода может занимать больше времени</string>
+    <string name="lock_security_preset_custom_description">Ручная настройка уровня защиты</string>
+
+    <string name="lock_security_strong_warning">На слабых устройствах проверка PIN-кода может выполняться заметно дольше</string>
 </resources>

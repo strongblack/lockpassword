@@ -3,6 +3,7 @@ package com.app.lockpassword.api
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -24,17 +25,22 @@ class LockPasswordActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-        val repository = LockPasswordPrefsRepository(this)
         val biometricEnabled = intent.getBooleanExtra(
             LockPasswordLauncher.EXTRA_BIOMETRIC_ENABLED,
             false
         )
 
         val uiConfig = readUiConfig()
+        val securityConfig = readSecurityConfig()
 
         biometricAuthManager = BiometricAuthManager(this)
+
+        val repository = LockPasswordPrefsRepository(
+            context = applicationContext,
+            securityConfig = securityConfig
+        )
 
         viewModel = LockPasswordViewModel(
             repository = repository,
@@ -60,9 +66,13 @@ class LockPasswordActivity : FragmentActivity() {
                             }
 
                             is LockPasswordResult.InvalidPin -> {
+                                // Ничего не делаем.
+                                // Ошибка уже обрабатывается внутри UI/ViewModel.
                             }
 
                             is LockPasswordResult.Locked -> {
+                                // Ничего не делаем.
+                                // Состояние блокировки уже показывается на экране.
                             }
 
                             is LockPasswordResult.Error -> {
@@ -79,6 +89,8 @@ class LockPasswordActivity : FragmentActivity() {
                                 viewModel.onBiometricError()
                             },
                             onFailed = {
+                                // BiometricPrompt сам показывает failed state,
+                                // а экран остаётся в режиме ввода PIN.
                             }
                         )
                     }
@@ -97,6 +109,18 @@ class LockPasswordActivity : FragmentActivity() {
             @Suppress("DEPRECATION")
             intent.getParcelableExtra(LockPasswordLauncher.EXTRA_UI_CONFIG)
         } ?: LockPasswordDefaults.uiConfig()
+    }
+
+    private fun readSecurityConfig(): LockPasswordSecurityConfig {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(
+                LockPasswordLauncher.EXTRA_SECURITY_CONFIG,
+                LockPasswordSecurityConfig::class.java
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(LockPasswordLauncher.EXTRA_SECURITY_CONFIG)
+        } ?: LockPasswordSecurityConfig()
     }
 
     private fun finishWithResult(resultCodeValue: Int) {

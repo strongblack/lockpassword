@@ -20,6 +20,10 @@ import androidx.compose.ui.graphics.toArgb
 import com.app.lockpassword.api.LockPasswordActivity
 import com.app.lockpassword.api.LockPasswordDefaults
 import com.app.lockpassword.api.LockPasswordLauncher
+import com.app.lockpassword.api.LockPasswordSecurityConfig
+
+import com.app.lockpassword.api.LockPasswordSecurityPreset
+import com.app.lockpassword.api.LockPasswordUiConfig
 import ru.app.lockpassword.ui.theme.LockPasswordTheme
 
 class MainActivity : ComponentActivity() {
@@ -69,7 +73,10 @@ class MainActivity : ComponentActivity() {
                             onClick = {
 
                                 val uiConfig = LockPasswordDefaults.uiConfig().apply {
+
+
                                     sizes.buttonScale = 1.08f
+
                                     lightColors.screenBackgroundColor = Color(0xFFF8FAFC).toArgb()
                                     lightColors.titleColor = Color(0xFF111827).toArgb()
 
@@ -90,6 +97,9 @@ class MainActivity : ComponentActivity() {
                                     lightColors.errorTextColor = Color(0xFFB3261E).toArgb()
                                     lightColors.errorBackgroundColor = Color(0xFFFFDAD6).toArgb()
                                     lightColors.messageTextColor = Color(0xFF374151).toArgb()
+
+
+
 
                                     darkColors.screenBackgroundColor = Color(0xFF0F1115).toArgb()
                                     darkColors.titleColor = Color(0xFFF9FAFB).toArgb()
@@ -116,9 +126,14 @@ class MainActivity : ComponentActivity() {
                                 val intent = LockPasswordLauncher.createIntent(
                                     context = this@MainActivity,
                                     biometricEnabled = true,
-                                    uiConfig = uiConfig
+                                    uiConfig = uiConfig,
+                                    securityConfig = LockPasswordSecurityConfig(
+                                        securityPreset = LockPasswordSecurityPreset.BALANCED
+                                    )
                                 )
                                 lockLauncher.launch(intent)
+
+
                             }
                         ) {
                             Text("Открыть lockpassword")
