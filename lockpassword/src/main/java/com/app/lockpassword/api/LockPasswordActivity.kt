@@ -4,19 +4,22 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.enableEdgeToEdge
+import androidx.fragment.app.FragmentActivity
 import com.app.lockpassword.biometric.BiometricAuthManager
 import com.app.lockpassword.storage.LockPasswordPrefsRepository
 import com.app.lockpassword.ui.LockPasswordRoute
 import com.app.lockpassword.ui.LockPasswordViewModel
+import com.app.lockpassword.ui.theme.LockPasswordTheme
 
-class LockPasswordActivity : AppCompatActivity() {
+class LockPasswordActivity : FragmentActivity() {
 
     private lateinit var viewModel: LockPasswordViewModel
     private lateinit var biometricAuthManager: BiometricAuthManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         val repository = LockPasswordPrefsRepository(this)
         val biometricEnabled = intent.getBooleanExtra(
@@ -32,45 +35,48 @@ class LockPasswordActivity : AppCompatActivity() {
         )
 
         setContent {
-            LockPasswordRoute(
-                viewModel = viewModel,
-                onResult = { result ->
-                    when (result) {
-                        LockPasswordResult.Success -> {
-                            finishWithResult(RESULT_SUCCESS)
-                        }
+            LockPasswordTheme {
+                LockPasswordRoute(
+                    viewModel = viewModel,
+                    onResult = { result ->
+                        when (result) {
+                            LockPasswordResult.Success -> {
+                                finishWithResult(RESULT_SUCCESS)
+                            }
 
-                        LockPasswordResult.BiometricSuccess -> {
-                            finishWithResult(RESULT_BIOMETRIC_SUCCESS)
-                        }
+                            LockPasswordResult.BiometricSuccess -> {
+                                finishWithResult(RESULT_BIOMETRIC_SUCCESS)
+                            }
 
-                        LockPasswordResult.Cancelled -> {
-                            finishWithResult(RESULT_CANCELLED)
-                        }
+                            LockPasswordResult.Cancelled -> {
+                                finishWithResult(RESULT_CANCELLED)
+                            }
 
-                        is LockPasswordResult.InvalidPin -> {
-                        }
+                            is LockPasswordResult.InvalidPin -> {
+                            }
 
-                        is LockPasswordResult.Locked -> {
-                        }
+                            is LockPasswordResult.Locked -> {
+                            }
 
-                        is LockPasswordResult.Error -> {
-                            finishWithResult(RESULT_ERROR)
+                            is LockPasswordResult.Error -> {
+                                finishWithResult(RESULT_ERROR)
+                            }
                         }
+                    },
+                    onBiometricRequest = {
+                        biometricAuthManager.authenticate(
+                            onSuccess = {
+                                viewModel.onBiometricSuccess()
+                            },
+                            onError = { _, _ ->
+                                viewModel.onBiometricError()
+                            },
+                            onFailed = {
+                            }
+                        )
                     }
-                },
-                onBiometricRequest = {
-                    biometricAuthManager.authenticate(
-                        onSuccess = {
-                            viewModel.onBiometricSuccess()
-                        },
-                        onError = { _, _ ->
-                        },
-                        onFailed = {
-                        }
-                    )
-                }
-            )
+                )
+            }
         }
     }
 

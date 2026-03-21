@@ -14,7 +14,7 @@ class BiometricAuthManager(
         val biometricManager = BiometricManager.from(activity)
         return biometricManager.canAuthenticate(
             BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                    BiometricManager.Authenticators.BIOMETRIC_WEAK
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
         ) == BiometricManager.BIOMETRIC_SUCCESS
     }
 

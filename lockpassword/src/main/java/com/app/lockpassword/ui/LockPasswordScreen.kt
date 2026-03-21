@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,6 +31,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -234,22 +237,64 @@ private fun LockKeyboard(
                 }
 
                 KeyItem.Backspace -> {
-                    LockTextActionButton(
-                        text = stringResource(R.string.lock_action_delete),
-                        onClick = onBackspaceClick
+                    LockIconActionButton(
+                        iconResId = R.drawable.backspace,
+                        contentDescription = stringResource(R.string.lock_action_delete),
+                        onClick = onBackspaceClick,
+                        iconSize = 54.dp
                     )
                 }
 
                 KeyItem.Biometric -> {
-                    LockTextActionButton(
-                        text = stringResource(R.string.lock_action_biometric),
-                        onClick = onBiometricClick
+                    LockIconActionButton(
+                        iconResId = R.drawable.fingerprint,
+                        contentDescription = stringResource(R.string.lock_action_biometric),
+                        onClick = onBiometricClick,
+                        iconSize = 64.dp
                     )
                 }
 
                 KeyItem.Empty -> {
                     LockEmptyButton()
                 }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun LockIconActionButton(
+    iconResId: Int,
+    contentDescription: String,
+    onClick: () -> Unit,
+    iconSize: androidx.compose.ui.unit.Dp = 64.dp,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            onClick = onClick,
+            modifier = Modifier.size(keyButtonSize),
+            shape = CircleShape,
+            color = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            tonalElevation = 2.dp
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = iconResId),
+                    contentDescription = contentDescription,
+                    modifier = Modifier.size(iconSize),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

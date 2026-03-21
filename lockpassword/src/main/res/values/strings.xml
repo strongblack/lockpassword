@@ -20,4 +20,6 @@
         <item quantity="one">%d minute remaining</item>
         <item quantity="other">%d minutes remaining</item>
     </plurals>
+
+    <string name="lock_biometric_icon">iconLock</string>
 </resources>

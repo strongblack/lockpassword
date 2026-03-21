@@ -22,4 +22,6 @@
         <item quantity="many">Осталось %d минут</item>
         <item quantity="other">Осталось %d минуты</item>
     </plurals>
+
+    <string name="lock_biometric_icon">iconLock</string>
 </resources>

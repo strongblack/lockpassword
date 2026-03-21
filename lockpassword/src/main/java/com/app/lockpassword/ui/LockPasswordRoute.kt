@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.app.lockpassword.api.LockPasswordResult
+import com.app.lockpassword.model.LockPasswordMode
 
 @Composable
 fun LockPasswordRoute(
@@ -17,6 +18,22 @@ fun LockPasswordRoute(
     LaunchedEffect(Unit) {
         viewModel.resultEvents.collect { result ->
             onResult(result)
+        }
+    }
+
+    LaunchedEffect(
+        uiState.mode,
+        uiState.input,
+        uiState.showBiometricButton,
+        uiState.remainingMinutes
+    ) {
+        if (
+            uiState.mode == LockPasswordMode.ENTER &&
+            uiState.input.isEmpty() &&
+            uiState.showBiometricButton &&
+            uiState.remainingMinutes == null
+        ) {
+            onBiometricRequest()
         }
     }
 
