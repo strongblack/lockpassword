@@ -1,9 +1,7 @@
 package ru.app.lockpassword
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -18,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import ru.devasn.api.LockPasswordActivity
 import ru.devasn.api.LockPasswordLauncher
 
 import ru.app.lockpassword.ui.theme.LockPasswordTheme
@@ -135,8 +132,6 @@ class MainActivity : ComponentActivity() {
                                 )
 
                                 lockPasswordLauncher.launch(intent)
-
-
                             }
                         ) {
                             Text("Open LockPassword")
