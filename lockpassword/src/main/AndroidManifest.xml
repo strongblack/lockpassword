@@ -8,7 +8,7 @@
     <application>
 
         <activity
-            android:name=".api.LockPasswordActivity"
+            android:name="ru.devasn.api.LockPasswordActivity"
             android:exported="false" />
 
     </application>
