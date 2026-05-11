@@ -12,6 +12,7 @@ import ru.devasn.biometric.BiometricAuthManager
 import ru.devasn.config.LockPasswordDefaults
 import ru.devasn.config.LockPasswordSecurityConfig
 import ru.devasn.config.LockPasswordUiConfig
+import ru.devasn.storage.LockPasswordPrefsRepository
 import ru.devasn.ui.LockPasswordRoute
 import ru.devasn.ui.LockPasswordViewModel
 import ru.devasn.ui.theme.LockPasswordTheme
@@ -54,19 +55,19 @@ class LockPasswordActivity : FragmentActivity() {
         securityConfig: LockPasswordSecurityConfig,
         biometricEnabled: Boolean
     ): Boolean {
-        val repository = _root_ide_package_.ru.devasn.storage.LockPasswordPrefsRepository(
+        val repository = LockPasswordPrefsRepository(
             context = this,
             securityConfig = securityConfig
         )
 
         biometricAuthManager =
-            _root_ide_package_.ru.devasn.biometric.BiometricAuthManager(this)
+           BiometricAuthManager(this)
 
         val canUseBiometric = biometricEnabled &&
                 repository.hasPin() &&
                 biometricAuthManager.isBiometricAvailable()
 
-        viewModel = _root_ide_package_.ru.devasn.ui.LockPasswordViewModel(
+        viewModel = LockPasswordViewModel(
             repository = repository,
             isBiometricAvailable = canUseBiometric,
             configuredPinLength = securityConfig.resolvedPinLength()
@@ -88,8 +89,8 @@ class LockPasswordActivity : FragmentActivity() {
 
     private fun setupContent(uiConfig: LockPasswordUiConfig) {
         setContent {
-            _root_ide_package_.ru.devasn.ui.theme.LockPasswordTheme(uiConfig = uiConfig) {
-                _root_ide_package_.ru.devasn.ui.LockPasswordRoute(
+           LockPasswordTheme(uiConfig = uiConfig) {
+                LockPasswordRoute(
                     viewModel = viewModel,
                     onResult = ::finishWithResult,
                     onBiometricRequest = {

@@ -2,7 +2,6 @@ package ru.devasn.config
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
-import ru.devasn.config.LockPasswordSecurityPreset
 
 @Parcelize
 data class LockPasswordSecurityConfig(

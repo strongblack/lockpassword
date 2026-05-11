@@ -5,7 +5,7 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 class LockPasswordUiConfig @JvmOverloads constructor(
-    var lightColors: ru.devasn.config.LockPasswordColorsConfig = _root_ide_package_.ru.devasn.config.LockPasswordDefaults.lightColors(),
-    var darkColors: ru.devasn.config.LockPasswordColorsConfig = _root_ide_package_.ru.devasn.config.LockPasswordDefaults.darkColors(),
-    var sizes: ru.devasn.config.LockPasswordSizesConfig = _root_ide_package_.ru.devasn.config.LockPasswordDefaults.sizes()
+    var lightColors: LockPasswordColorsConfig = LockPasswordDefaults.lightColors(),
+    var darkColors: LockPasswordColorsConfig = LockPasswordDefaults.darkColors(),
+    var sizes: LockPasswordSizesConfig = LockPasswordDefaults.sizes()
 ) : Parcelable

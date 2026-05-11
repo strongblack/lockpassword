@@ -2,6 +2,7 @@ package ru.app.lockpassword
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -37,6 +38,11 @@ class MainActivity : ComponentActivity() {
         when (lockResult.code) {
             LockPasswordResult.Code.SUCCESS -> {
                 Log.d(tag, "Authentication succeeded")
+                Toast.makeText(
+                    this,
+                    "Authentication succeeded",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
 
             LockPasswordResult.Code.PIN_CREATED -> {
@@ -112,7 +118,7 @@ class MainActivity : ComponentActivity() {
 
                                 val intent = LockPasswordLauncher.createIntent(
                                     context = this@MainActivity,
-                                    biometricEnabled = true,
+                                    biometricEnabled = false,
                                     uiConfig = uiConfig,
                                     securityConfig = LockPasswordSecurityConfig(
                                         pinLength = 6,

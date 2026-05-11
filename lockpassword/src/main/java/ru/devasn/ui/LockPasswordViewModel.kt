@@ -2,12 +2,6 @@ package ru.devasn.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import ru.devasn.api.LockPasswordResult
-import ru.devasn.model.LockPasswordError
-import ru.devasn.model.LockPasswordMode
-import ru.devasn.model.LockPasswordUiState
-import ru.devasn.model.LockPasswordVerifyResult
-import ru.devasn.storage.LockPasswordPrefsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -17,6 +11,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ru.devasn.api.LockPasswordResult
+import ru.devasn.model.LockPasswordError
+import ru.devasn.model.LockPasswordMode
+import ru.devasn.model.LockPasswordUiState
+import ru.devasn.model.LockPasswordVerifyResult
+import ru.devasn.storage.LockPasswordPrefsRepository
 
 class LockPasswordViewModel(
     private val repository: LockPasswordPrefsRepository,
@@ -179,7 +179,6 @@ class LockPasswordViewModel(
             when (val result = repository.verifyPin(input)) {
                 LockPasswordVerifyResult.Success -> {
                     clearSecurityState()
-                    clearInputAndErrorState()
                     emitResult(LockPasswordResult.success())
                 }
 
