@@ -77,7 +77,7 @@ Recommended if your project already uses libs.versions.toml.
 
 ```toml
 [versions]
-lockpassword = "1.0.1"
+lockpassword = "1.0.2"
 
 [libraries]
 lockpassword = { group = "ru.devasn", name = "lockpassword", version.ref = "lockpassword" }
@@ -98,7 +98,7 @@ Simplest setup if you do not use Version Catalog.
 
 ```kotlin
 dependencies {
-    implementation("ru.devasn:lockpassword:1.0.1")
+    implementation("ru.devasn:lockpassword:1.0.2")
 }
 ```
 

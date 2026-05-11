@@ -2,19 +2,19 @@ package ru.devasn.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ru.devasn.config.LockPasswordSecurityConfig
 import ru.devasn.model.LockPasswordSecretRecord
 import ru.devasn.model.LockPasswordVerifyResult
 import ru.devasn.util.LockPasswordKeystoreManager
 import ru.devasn.util.LockPasswordSecurePinHasher
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import androidx.core.content.edit
 
 class LockPasswordPrefsRepository(
     context: Context,
-    private val securityConfig: LockPasswordSecurityConfig = _root_ide_package_.ru.devasn.config.LockPasswordSecurityConfig(),
+    private val securityConfig: LockPasswordSecurityConfig = LockPasswordSecurityConfig(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
 
@@ -24,8 +24,8 @@ class LockPasswordPrefsRepository(
     )
 
     private val securePinHasher =
-        _root_ide_package_.ru.devasn.util.LockPasswordSecurePinHasher(
-            keystoreManager = _root_ide_package_.ru.devasn.util.LockPasswordKeystoreManager(),
+        LockPasswordSecurePinHasher(
+            keystoreManager = LockPasswordKeystoreManager(),
             securityConfig = securityConfig
         )
 

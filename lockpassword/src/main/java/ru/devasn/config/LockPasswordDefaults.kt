@@ -6,8 +6,8 @@ import androidx.compose.ui.graphics.toArgb
 object LockPasswordDefaults {
 
     @JvmStatic
-    fun lightColors(): ru.devasn.config.LockPasswordColorsConfig {
-        return _root_ide_package_.ru.devasn.config.LockPasswordColorsConfig(
+    fun lightColors(): LockPasswordColorsConfig {
+        return LockPasswordColorsConfig(
             screenBackgroundColor = Color(0xFFF8FAFC).toArgb(),
             titleColor = Color(0xFF111827).toArgb(),
 
@@ -33,8 +33,8 @@ object LockPasswordDefaults {
     }
 
     @JvmStatic
-    fun darkColors(): ru.devasn.config.LockPasswordColorsConfig {
-        return _root_ide_package_.ru.devasn.config.LockPasswordColorsConfig(
+    fun darkColors(): LockPasswordColorsConfig {
+        return LockPasswordColorsConfig(
             screenBackgroundColor = Color(0xFF0F1115).toArgb(),
             titleColor = Color(0xFFF9FAFB).toArgb(),
 
@@ -60,8 +60,8 @@ object LockPasswordDefaults {
     }
 
     @JvmStatic
-    fun uiConfig(): ru.devasn.config.LockPasswordUiConfig {
-        return _root_ide_package_.ru.devasn.config.LockPasswordUiConfig(
+    fun uiConfig(): LockPasswordUiConfig {
+        return LockPasswordUiConfig(
             lightColors = lightColors(),
             darkColors = darkColors(),
             sizes = sizes()
@@ -69,8 +69,8 @@ object LockPasswordDefaults {
     }
 
     @JvmStatic
-    fun sizes(): ru.devasn.config.LockPasswordSizesConfig {
-        return _root_ide_package_.ru.devasn.config.LockPasswordSizesConfig(
+    fun sizes(): LockPasswordSizesConfig {
+        return LockPasswordSizesConfig(
             buttonScale = 1.0f
         )
     }
@@ -78,7 +78,7 @@ object LockPasswordDefaults {
 
     @JvmStatic
     fun security(): LockPasswordSecurityConfig {
-        return _root_ide_package_.ru.devasn.config.LockPasswordSecurityConfig(
+        return LockPasswordSecurityConfig(
             pinLength = 6
         )
     }

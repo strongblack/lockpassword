@@ -1,10 +1,10 @@
 package ru.devasn.lockpassword.api
 
-import ru.devasn.config.LockPasswordSecurityConfig
-import ru.devasn.config.LockPasswordSecurityPreset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ru.devasn.config.LockPasswordSecurityConfig
+import ru.devasn.config.LockPasswordSecurityPreset
 
 class LockPasswordSecurityConfigTest {
 

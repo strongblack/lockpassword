@@ -1,6 +1,6 @@
 package ru.devasn.config
 
-enum class LockPasswordSecurityPreset  {
+enum class LockPasswordSecurityPreset {
     FAST,
     BALANCED,
     STRONG,
